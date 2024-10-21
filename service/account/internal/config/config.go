@@ -10,7 +10,7 @@ import (
 type Config struct {
 	postgres.Config
 
-	GRPCServerPort int `env:"GRPC_SERVER_PORT" env-default:"9090"`
+	HTTPServerPort string `env:"HTTP_SERVER_PORT" env-default:":8080"`
 }
 
 func New() *Config {
