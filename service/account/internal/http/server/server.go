@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,20 +12,14 @@ import (
 )
 
 type Server struct {
-	Echo       *echo.Echo
-	HttpServer *http.Server
+	Echo *echo.Echo
+	Port string
 }
 
 func New(port string) Server {
 	e := echo.New()
 
-	s := http.Server{
-		Addr:    port,
-		Handler: e,
-		//ReadTimeout: 30 * time.Second, // customize http.Server timeouts
-	}
-
-	return Server{Echo: e, HttpServer: &s}
+	return Server{Echo: e, Port: fmt.Sprintf(":%s", port)}
 }
 
 func (s *Server) Start() error {
@@ -34,7 +29,8 @@ func (s *Server) Start() error {
 
 	// Starting server
 	go func() {
-		if err := s.HttpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		s.Echo.Logger.Infof("Starting on %d", s.Port)
+		if err := s.Echo.Start(s.Port); err != nil && err != http.ErrServerClosed {
 			s.Echo.Logger.Errorf("HTTP server ListenAndServe: %v", err)
 		}
 	}()
@@ -46,21 +42,16 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) GracefulStop() error {
-	// Creating new context with timeout
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
 
 	// Shutdown Echo
-	if err := s.Echo.Shutdown(shutdownCtx); err != nil {
-		s.Echo.Logger.Errorf("Echo shutdown: %v", err)
+	<-ctx.Done()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := s.Echo.Shutdown(ctx); err != nil {
+		s.Echo.Logger.Fatal(err)
 		return err
 	}
-
-	// Shutdown HttpServer
-	if err := s.HttpServer.Shutdown(shutdownCtx); err != nil {
-		s.Echo.Logger.Errorf("Server forced shutdown: %v", err)
-		return err
-	}
-
 	return nil
 }

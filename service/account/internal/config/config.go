@@ -10,7 +10,7 @@ import (
 type Config struct {
 	postgres.Config
 
-	HTTPServerPort string `env:"HTTP_SERVER_PORT" env-default:":8080"`
+	HTTPServerPort string `env:"HTTP_SERVER_PORT" env-default:"8080"`
 }
 
 func New() *Config {

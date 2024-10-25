@@ -1,9 +1,0 @@
-openapi: 3.0.2
-info:
-    title: Account Service API
-    description: API для управления аккаунтами и аутентификацией. Микросервис Simbir-Health
-    version: 1.0.0
-servers:
-    - url: http://localhost:8081/api
-security:
-    - bearerAuth: []

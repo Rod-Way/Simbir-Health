@@ -1,0 +1,280 @@
+openapi: 3.0.2
+info:
+    title: Account Service API
+    description: API для управления аккаунтами и аутентификацией
+    version: 1.0.0
+servers:
+    - url: http://localhost:8081/api
+security:
+    - bearerAuth: []
+components:
+    securitySchemes:
+        bearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+    schemas:
+        SignUpRequest:
+            type: object
+            properties:
+                lastName:
+                    type: string
+                    example: Sazanovich
+                firstName:
+                    type: string
+                    example: Oleg
+                username:
+                    type: string
+                    example: user
+                password:
+                    type: string
+                    example: user
+            required:
+                - lastName
+                - firstName
+                - username
+                - password
+        SignInRequest:
+            type: object
+            properties:
+                username:
+                    type: string
+                    example: user
+                password:
+                    type: string
+                    example: user
+            required:
+                - username
+                - password
+        RefreshTokenRequest:
+            type: object
+            properties:
+                refreshToken:
+                    type: string
+            required:
+                - refreshToken
+        UpdateAccountRequest:
+            type: object
+            properties:
+                lastName:
+                    type: string
+                    example: Sazanovich
+                firstName:
+                    type: string
+                    example: Oleg
+                password:
+                    type: string
+                    example: user
+            required:
+                - lastName
+                - firstName
+                - password
+        Account:
+            type: object
+            properties:
+                id:
+                    type: string
+                lastName:
+                    type: string
+                    example: Sazanovich
+                firstName:
+                    type: string
+                    example: Oleg
+                username:
+                    type: string
+                    example: user
+                roles:
+                    type: array
+                    items:
+                        type: string
+                        example: user
+        AccountListResponse:
+            type: object
+            properties:
+                accounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Account'
+paths:
+    /Authentication/SignUp:
+        post:
+            summary: Регистрация нового аккаунта
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SignUpRequest'
+            responses:
+                '201':
+                    description: Успешная регистрация
+    /Authentication/SignIn:
+        post:
+            summary: Аутентификация и получение JWT
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SignInRequest'
+            responses:
+                '200':
+                    description: Успешная аутентификация. Возвращает access и refresh токены.
+    /Authentication/SignOut:
+        put:
+            summary: Выход из аккаунта
+            security:
+                - bearerAuth: []
+            responses:
+                '200':
+                    description: Успешный выход
+    /Authentication/Validate:
+        get:
+            summary: Интроспекция токена
+            parameters:
+                - in: query
+                  name: accessToken
+                  schema:
+                      type: string
+                  required: true
+            responses:
+                '200':
+                    description: Валидный токен
+    /Authentication/Refresh:
+        post:
+            summary: Обновление пары токенов
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RefreshTokenRequest'
+            responses:
+                '200':
+                    description: Токены успешно обновлены
+    /Accounts/Me:
+        get:
+            summary: Получение информации о текущем пользователе
+            security:
+                - bearerAuth: []
+            responses:
+                '200':
+                    description: Информация о пользователе
+    /Accounts/Update:
+        put:
+            summary: Обновление информации о себе
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateAccountRequest'
+            responses:
+                '200':
+                    description: Информация успешно обновлена
+    /Accounts:
+        get:
+            summary: Получение списка всех аккаунтов
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: query
+                  name: from
+                  schema:
+                      type: integer
+                  description: Начало выборки
+                - in: query
+                  name: count
+                  schema:
+                      type: integer
+                  description: Размер выборки
+            responses:
+                '200':
+                    description: Успешно
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AccountListResponse'
+        post:
+            summary: Создание нового аккаунта администратором
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SignUpRequest'
+            responses:
+                '201':
+                    description: Успешно создан новый аккаунт
+    /Accounts/{id}:
+        put:
+            summary: Редактирование аккаунта по ID
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  schema:
+                      type: string
+                  required: true
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SignUpRequest'
+            responses:
+                '200':
+                    description: Аккаунт успешно обновлен
+        delete:
+            summary: Мягкое удаление аккаунта
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  schema:
+                      type: string
+                  required: true
+            responses:
+                '200':
+                    description: Успешное удаление
+    /Doctors:
+        get:
+            summary: Получение списка докторов
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: query
+                  name: nameFilter
+                  schema:
+                      type: string
+                - in: query
+                  name: from
+                  schema:
+                      type: integer
+                - in: query
+                  name: count
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Успешно возвращен список
+    /Doctors/{id}:
+        get:
+            summary: Получение информации о докторе по ID
+            security:
+                - bearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  schema:
+                      type: string
+                  required: true
+            responses:
+                '200':
+                    description: Успешно возвращена информация о докторе
