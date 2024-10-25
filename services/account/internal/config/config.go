@@ -18,7 +18,11 @@ func New() *Config {
 	err := cleanenv.ReadConfig("./configs/local.env", &cfg)
 	fmt.Println(err)
 	if err != nil {
-		return nil
+		err := cleanenv.ReadEnv(&cfg)
+		fmt.Println(err)
+		if err != nil {
+			return nil
+		}
 	}
 	return &cfg
 }
